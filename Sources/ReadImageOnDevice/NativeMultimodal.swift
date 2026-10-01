@@ -9,8 +9,8 @@ import CoreGraphics
 #if canImport(FoundationModels) && compiler(>=6.4)
 import FoundationModels
 
-/// macOS 27 以降の Foundation Models ネイティブ画像入力（マルチモーダル）経路。
-@available(macOS 27.0, *)
+/// macOS 27 / iOS 27 以降の Foundation Models ネイティブ画像入力（マルチモーダル）経路。
+@available(macOS 27.0, iOS 27.0, *)
 enum NativeMultimodal {
     static func explain(
         cgImage: CGImage,

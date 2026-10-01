@@ -1,12 +1,12 @@
 # ReadImage on Device
 
-**Mac の中だけで完結する、オンデバイス画像リーダー。**
+**端末の中だけで完結する、オンデバイス画像リーダー。**
 
 画像を渡すと「何が写っているか」を日本語の文章で返します。処理はすべて Apple のオンデバイスフレームワーク（Vision / Foundation Models）で行われるため、**画像がネットワークに送られることはありません**。API キーも不要です。
 
-そして、同じ API のまま、**動いている macOS ごとに「その OS が出せる最高精度」**を使います。新しい OS ほど賢くなり、古い OS でも動きます。
+そして、同じ API のまま、**動いている OS ごとに「その OS が出せる最高精度」**を使います。新しい OS ほど賢くなり、古い OS でも動きます。
 
-- **macOS 11 以降**で動作（M シリーズ / Intel）
+- **macOS 11 以降 / iOS 13 以降**で動作（ライブラリ）。CLI は macOS 用
 - **完全オフライン・オンデバイス**（通信なし・API キー不要）
 - **OS に応じて自動で最高精度を選択**（Vision の revision を自動で最新に）
 - **共通規格風のかんたん API**（stdin/stdout の JSON、Swift からも数行）
@@ -22,12 +22,22 @@ $ readimage photo.jpg
 
 ### インストール
 
-Swift Package Manager で使えます。
+Swift Package Manager で使えます。macOS アプリでも iOS アプリでも同じ API です。
 
 ```swift
 dependencies: [
     .package(url: "https://github.com/hibachi-inc/ReadImage-on-Device", from: "0.1.0")
 ]
+```
+
+iOS アプリで使う場合は、`UIImage` から `CGImage` を取り出して渡します。
+
+```swift
+import ReadImageOnDevice
+
+guard let cgImage = uiImage.cgImage else { return }
+let result = await ReadImage.read(cgImage: cgImage, mode: .explain, path: "photo.jpg")
+print(result.text)   // iPhone でも日本語の解説文が返る
 ```
 
 CLI として使う場合:
@@ -54,7 +64,7 @@ readimage --languages ja-JP,en-US a.jpg b.png
 
 | オプション | 説明 |
 | --- | --- |
-| `--raw` | AI を使わず、Vision の生の抽出結果（AI 整形前テキスト）だけを返す。全 macOS 対応 |
+| `--raw` | AI を使わず、Vision の生の抽出結果（AI 整形前テキスト）だけを返す。全 OS 対応 |
 | `--explain` | その OS で使える最善の方法で解説文を生成する（既定） |
 | `-p, --prompt <text>` | 解説の依頼文を差し替える |
 | `-i, --instructions <text>` | 生成時の system 指示を差し替える |
@@ -83,28 +93,30 @@ let sync = try ReadImage.readSync(path: "photo.jpg", mode: .raw)
 
 ## どの OS でどう動くか
 
-同じ `ReadImage.read(path:)` が、実行中の macOS に応じて経路を選びます。
+同じ `ReadImage.read(...)` が、実行中の OS に応じて経路を選びます（macOS と iOS で同じ表）。
 
 | 実行環境 | 採用する経路 | 返すもの |
 | --- | --- | --- |
-| **macOS 27 以降** + Apple Intelligence | `native-multimodal(macOS27)` | 画像を Foundation Models に直接渡して解説文を生成 |
-| **macOS 26** + Apple Intelligence | `vision+fm(macOS26)` | Vision で客観情報を抽出 → Foundation Models で日本語化 |
-| **macOS 11〜25** / Apple Intelligence 無効 | `vision-raw` | Vision の生の抽出結果（AI 整形前テキスト） |
+| **macOS 27 / iOS 27 以降** + Apple Intelligence | `native-multimodal(macOS27)` | 画像を Foundation Models に直接渡して解説文を生成 |
+| **macOS 26 / iOS 26** + Apple Intelligence | `vision+fm(macOS26)` | Vision で客観情報を抽出 → Foundation Models で日本語化 |
+| **macOS 11〜25 / iOS 13〜25**（Apple Intelligence 無効を含む） | `vision-raw` | Vision の生の抽出結果（AI 整形前テキスト） |
 
-どの経路でも、Vision による客観情報（`ImageFacts`）は常に取得できるので、`--raw` は macOS 11 から使えます。
+どの経路でも、Vision による客観情報（`ImageFacts`）は常に取得できるので、生テキストは macOS 11 / iOS 13 から使えます。
+
+> **iOS で Apple Intelligence を使うには**: 言語モデル（Foundation Models）は Apple Intelligence 対応端末（A17 Pro / M シリーズ以降）でのみ利用できます。非対応端末では自動的に `vision-raw` 経路になります。
 
 ### 各 OS の「最高精度」の選び方
 
-Vision の各リクエストは OS ごとに複数の revision を持ちます。本パッケージは `supportedRevisions.last` を実行時に選ぶので、**新しい OS では自動的に高精度なモデル**が使われます。
+Vision の各リクエストは OS ごとに複数の revision を持ちます。本パッケージは `supportedRevisions.last` を実行時に選ぶので、**新しい OS では自動的に高精度なモデル**が使われます。revision は macOS / iOS で共通です。
 
 | リクエスト | 最新 revision が使える OS |
 | --- | --- |
-| 画像分類 `VNClassifyImageRequest` | macOS 14+ (rev2) |
-| 文字認識 `VNRecognizeTextRequest` | macOS 13+ (rev3) |
-| 顔検出 `VNDetectFaceRectanglesRequest` | macOS 12+ (rev3) |
-| 人物検出 `VNDetectHumanRectanglesRequest` | macOS 12+ (rev2) |
-| 動物検出 `VNRecognizeAnimalsRequest` | macOS 12+ (rev2) |
-| バーコード `VNDetectBarcodesRequest` | macOS 14+ (rev4) |
+| 画像分類 `VNClassifyImageRequest` | macOS 14+ / iOS 17+ (rev2) |
+| 文字認識 `VNRecognizeTextRequest` | macOS 13+ / iOS 16+ (rev3) |
+| 顔検出 `VNDetectFaceRectanglesRequest` | macOS 12+ / iOS 15+ (rev3) |
+| 人物検出 `VNDetectHumanRectanglesRequest` | macOS 12+ / iOS 15+ (rev2) |
+| 動物検出 `VNRecognizeAnimalsRequest` | macOS 12+ / iOS 15+ (rev2) |
+| バーコード `VNDetectBarcodesRequest` | macOS 14+ / iOS 17+ (rev4) |
 
 ## 抽出できる客観情報
 
@@ -156,9 +168,11 @@ Vision の各リクエストは OS ごとに複数の revision を持ちます�
 ]
 ```
 
-## ビルドについて（macOS 11 をデプロイ先にする場合）
+## デプロイ先について（macOS 11 / iOS 13 を下限にする場合）
 
-`Package.swift` のデプロイ先は `.macOS(.v11)` です。ただし直近の Xcode ツールチェーンでは、macOS 11 を明示する `swift build` が自動的に 12.0 へ切り上げられ、macOS 27 SDK の API を含むビルドでは下限 12.0 が強制されます。
+`Package.swift` は `platforms: [.macOS(.v11), .iOS(.v13)]` を宣言しています。ソースコード自体は macOS 11 / iOS 13 の API だけで型チェックが通ります。
+
+ただし直近の Xcode ツールチェーン（Xcode 27）は、サポートする下限を**macOS 12.0 / iOS 15.0** に引き上げています。そのため Xcode 27 でビルドすると、宣言した下限は自動的に切り上げられます（macOS 11 を明示した `swift build` は 12.0、iOS 13 は 15.0 になります）。
 
 そのため、**真に macOS 11 をサポートするバイナリ**が必要な場合は、Command Line Tools（SDK 26）でビルドします。
 
@@ -169,6 +183,8 @@ otool -l .build/release/readimage | grep -A3 LC_BUILD_VERSION   # minos 11.0
 ```
 
 Xcode ツールチェーンでビルドした場合は `minos 12.0` になりますが、いずれの場合も Foundation Models は弱リンクされるため、対応していない古い OS では自動的に Vision の経路へフォールバックします。
+
+iOS 13〜14 を真に下限にするには、当時の iOS SDK を含む Xcode 26 以前のツールチェーンでビルドしてください。Xcode 27 では iOS 15 以上が下限になります。
 
 ## テスト
 

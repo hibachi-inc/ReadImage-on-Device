@@ -3,11 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "ReadImageOnDevice",
-    // Vision は macOS 10.15 以降で動作するため、デプロイ先は macOS 11。
-    // Foundation Models（macOS 26/27）は #if canImport と #available で実行時・
-    // コンパイル時に切り替え、対応していない OS では Vision の経路にフォールバックする。
+    // Vision は macOS 10.15 / iOS 13 以降で動作するため、デプロイ先は macOS 11 / iOS 13。
+    // Foundation Models（macOS 26/27, iOS 26/27）は #if canImport と #available で
+    // 実行時・コンパイル時に切り替え、対応していない OS では Vision の経路に
+    // フォールバックする。
     // 真に minos 11.0 を得るには Command Line Tools(SDK 26) でのビルドが必要（README 参照）。
-    platforms: [.macOS(.v11)],
+    platforms: [.macOS(.v11), .iOS(.v13)],
     products: [
         .library(name: "ReadImageOnDevice", targets: ["ReadImageOnDevice"]),
         .executable(name: "readimage", targets: ["readimage"]),

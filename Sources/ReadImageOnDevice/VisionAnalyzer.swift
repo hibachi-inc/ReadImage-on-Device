@@ -126,7 +126,7 @@ public enum ReadImageAnalyzer {
         var humans: [DetectedBox] = []
         if #available(macOS 11.0, *) {
             let human = VNDetectHumanRectanglesRequest()
-            if #available(macOS 12.0, *) {
+            if #available(macOS 12.0, iOS 15.0, *) {
                 human.upperBodyOnly = false
             }
             applyRevision(to: human, name: "detectHumanRectangles")

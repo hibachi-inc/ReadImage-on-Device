@@ -54,7 +54,7 @@ public enum ReadImage {
     /// 実行中の OS で Apple オンデバイス言語モデルが使えるか。
     public static var supportsLanguageModel: Bool {
         #if canImport(FoundationModels)
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, *) {
             if case .available = SystemLanguageModel.default.availability {
                 return true
             }
@@ -137,7 +137,7 @@ public enum ReadImage {
         let instr = instructions ?? defaultInstructions
         #if canImport(FoundationModels)
         #if compiler(>=6.4)
-        if #available(macOS 27.0, *) {
+        if #available(macOS 27.0, iOS 27.0, *) {
             if let text = blockingValue({
                 try await NativeMultimodal.explain(cgImage: cgImage, prompt: prompt, instructions: instr)
             }) {
@@ -145,7 +145,7 @@ public enum ReadImage {
             }
         }
         #endif
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, *) {
             if let text = blockingValue({
                 try await FoundationModelWriter.explain(
                     facts: facts,
@@ -162,7 +162,7 @@ public enum ReadImage {
 
     #if canImport(FoundationModels)
     /// 非同期処理を同期的に待つ。macOS 26 以降でのみ到達する。
-    @available(macOS 26.0, *)
+    @available(macOS 26.0, iOS 26.0, *)
     private static func blockingValue<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) -> T? {
         let box = AsyncResultBox<T>()
         let semaphore = DispatchSemaphore(value: 0)
@@ -188,8 +188,8 @@ public enum ReadImage {
         let instr = instructions ?? defaultInstructions
         #if canImport(FoundationModels)
         #if compiler(>=6.4)
-        // macOS 27+: 画像そのものをモデルに渡す（最高精度）。
-        if #available(macOS 27.0, *) {
+        // macOS 27 / iOS 27+: 画像そのものをモデルに渡す（最高精度）。
+        if #available(macOS 27.0, iOS 27.0, *) {
             do {
                 let text = try await NativeMultimodal.explain(cgImage: cgImage, prompt: prompt, instructions: instr)
                 return Result(path: path, route: "native-multimodal(macOS27)", text: text, facts: facts)
@@ -198,8 +198,8 @@ public enum ReadImage {
             }
         }
         #endif
-        // macOS 26: Vision の客観情報を Foundation Models で言語化。
-        if #available(macOS 26.0, *) {
+        // macOS 26 / iOS 26: Vision の客観情報を Foundation Models で言語化。
+        if #available(macOS 26.0, iOS 26.0, *) {
             do {
                 let text = try await FoundationModelWriter.explain(
                     facts: facts,

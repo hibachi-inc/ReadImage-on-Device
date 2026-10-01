@@ -3,8 +3,8 @@ import Foundation
 #if canImport(FoundationModels)
 import FoundationModels
 
-/// macOS 26 以降の Foundation Models で、Vision の抽出結果を日本語の解説文に整える経路。
-@available(macOS 26.0, *)
+/// macOS 26 / iOS 26 以降の Foundation Models で、Vision の抽出結果を日本語の解説文に整える経路。
+@available(macOS 26.0, iOS 26.0, *)
 enum FoundationModelWriter {
     /// Vision の客観情報（facts）を根拠に解説文を生成する。
     static func explain(
