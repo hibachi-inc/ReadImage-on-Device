@@ -218,3 +218,9 @@ if options.json {
         print("")
     }
 }
+
+// 1 枚でも失敗したら非ゼロで終了する。
+// シェル連鎖・cron・CI・パイプの前処理が失敗を検知できるようにする。
+if ordered.contains(where: { $0.error != nil }) {
+    exit(1)
+}
