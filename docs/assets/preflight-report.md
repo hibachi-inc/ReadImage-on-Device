@@ -1,65 +1,55 @@
-# Image Preflight Report
+# AI Image Director preflight report
 
-Processed images: 2
-Original total: 3.1 MB
-Recommended delivery total: 140.3 KB
-Estimated reduction: 95.6%
+Mode: SEO (public documentation).
 
-Applied fixes:
-- Renamed assets to context-aware lower-kebab-case filenames.
-- Converted delivery assets to WebP.
-- Generated JPEG/PNG fallbacks.
-- Prepared SEO/accessibility alt text suggestions.
-- Stripped unnecessary metadata by re-encoding outputs.
+Original PNG total (6 images): 9,348,159 bytes.
+Recommended WebP total (all 3 languages): 432,798 bytes.
+Estimated reduction: 95.4%.
+
+A reader downloads only the two images for the selected language. JPEG fallbacks are included for reuse and are not loaded by the README.
+
+Applied: localized lower-kebab-case naming, 1200px resizing without upscaling, WebP + JPEG outputs, metadata stripping and localized alt text. Originals are preserved outside the repository.
+
+Manual checks: titles, localized labels and conditional Japanese-description labels verified visually. README language links and image paths verified. These dimensions are a delivery choice, not a claimed GitHub requirement.
 
 ## readimage-local-processing-flow
 
-- Original: `generated-flow.png` (1672×941, 1.5 MB)
-- Recommended delivery: `images/readimage-local-processing-flow-1200w.webp` (62.3 KB, 95.9% reduction)
-- Mode: `seo`
-- Role: `diagram`
-- Alt: `画像をReadImageで端末内処理し、抽出テキスト・JSON・対応環境での日本語説明を出力する流れ`
-- Variants:
-  - `images/readimage-local-processing-flow-1200w.webp` — 1200×675, webp, 62.3 KB
-  - `images/readimage-local-processing-flow-1200w.jpg` — 1200×675, jpg, 112.2 KB
-- Decisions:
-  - Generated responsive WebP variants plus fallback images.
-  - Prepared HTML implementation guidance.
-  - Non-hero SEO images can usually use lazy loading.
-- Assumptions:
-  - GitHub READMEの説明図。説明文の生成は対応環境に限られる。
-  - SEO mode assumes the image will be used on a website or web page.
-- Warnings:
-  - 画像は端末内処理までを示す。出力を外部LLMへ渡す場合はテキストが外部送信される。
-  - Check small responsive variants for text/readability before publishing.
+- Original: `generated-flow.png` (1,561,396 bytes)
+- Delivery: `images/readimage-local-processing-flow-1200w.webp` (1200×675, 63,774 bytes)
+- Language: ja
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.
 
 ## readimage-on-device-hero
 
-- Original: `generated-hero.png` (1672×941, 1.6 MB)
-- Recommended delivery: `images/readimage-on-device-hero-1200w.webp` (78.0 KB, 95.3% reduction)
-- Mode: `seo`
-- Role: `hero`
-- Alt: `ReadImage on Device — 画像を端末内で読み取り、テキストとJSONへ変換するSwiftパッケージ`
-- Variants:
-  - `images/readimage-on-device-hero-1200w.webp` — 1200×675, webp, 78.0 KB
-  - `images/readimage-on-device-hero-1200w.jpg` — 1200×675, jpg, 127.8 KB
-- Decisions:
-  - Generated responsive WebP variants plus fallback images.
-  - Prepared HTML implementation guidance.
-  - Treated as a likely first-view/LCP image; lazy loading is not recommended.
-- Assumptions:
-  - GitHub READMEの冒頭画像。サムネイルにも再利用できる概念図。
-  - 1200px幅の単一配信画像を選択。GitHub専用の寸法要件としては扱わない。
-  - SEO mode assumes the image will be used on a website or web page.
-- Warnings:
-  - 生成された画面とJSONカードは概念図で、実際の出力画面ではない。
-  - 文字の可読性は縮小後も目視確認する。
+- Original: `generated-hero.png` (1,702,927 bytes)
+- Delivery: `images/readimage-on-device-hero-1200w.webp` (1200×675, 79,912 bytes)
+- Language: ja
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.
 
-## READMEへの適用
+## readimage-local-processing-flow-en
 
-- AI Image DirectorのSEOモードで処理。
-- 原本PNGは別フォルダに保持し、上書きしていません。
-- 2枚のWebP配信容量：143,686 bytes（約140KB）。原本合計：3,264,323 bytes（約3.11MiB）。削減率95.6%。
-- READMEではWebPのみを読み込み、JPEGは代替用途に同梱。
-- 1200px幅の単一画像を採用。GitHub専用の推奨寸法とはしていません。
-- 画面とJSONカードは概念図です。日本語説明は対応環境で利用できます。
+- Original: `en-flow.png` (1,463,391 bytes)
+- Delivery: `images/readimage-local-processing-flow-en-1200w.webp` (1200×675, 69,380 bytes)
+- Language: en
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.
+
+## readimage-on-device-hero-en
+
+- Original: `en-hero.png` (1,582,378 bytes)
+- Delivery: `images/readimage-on-device-hero-en-1200w.webp` (1200×675, 76,566 bytes)
+- Language: en
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.
+
+## readimage-local-processing-flow-zh-cn
+
+- Original: `zh-flow.png` (1,411,432 bytes)
+- Delivery: `images/readimage-local-processing-flow-zh-cn-1200w.webp` (1200×675, 64,006 bytes)
+- Language: zh-CN
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.
+
+## readimage-on-device-hero-zh-cn
+
+- Original: `zh-hero.png` (1,626,635 bytes)
+- Delivery: `images/readimage-on-device-hero-zh-cn-1200w.webp` (1200×675, 79,160 bytes)
+- Language: zh-CN
+- Warning: generated conceptual image. Descriptions default to Japanese even in the English and Chinese documentation.

@@ -46,8 +46,10 @@
       "implementation_recommendations": {
         "readme_path": "docs/assets/images/readimage-local-processing-flow-1200w.webp",
         "display": "Markdown image with Japanese alt text",
-        "fallback": "JPEG is included for reuse; README uses WebP"
-      }
+        "fallback": "JPEG is included for reuse; README uses WebP",
+        "readme": "README.ja.md"
+      },
+      "locale": "ja"
     },
     {
       "original_file": "generated-hero.png",
@@ -94,7 +96,207 @@
       "implementation_recommendations": {
         "readme_path": "docs/assets/images/readimage-on-device-hero-1200w.webp",
         "display": "Markdown image with Japanese alt text",
-        "fallback": "JPEG is included for reuse; README uses WebP"
+        "fallback": "JPEG is included for reuse; README uses WebP",
+        "readme": "README.ja.md"
+      },
+      "locale": "ja"
+    },
+    {
+      "original_file": "en-flow.png",
+      "original_bytes": 1463391,
+      "mode": "seo",
+      "role": "diagram",
+      "slug": "readimage-local-processing-flow-en",
+      "alt": "Images are processed locally by ReadImage to produce extracted text, JSON and Japanese descriptions on supported devices",
+      "original_width": 1672,
+      "original_height": 941,
+      "has_alpha": false,
+      "variants": [
+        {
+          "format": "webp",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-local-processing-flow-en-1200w.webp",
+          "bytes": 69380,
+          "purpose": "responsive"
+        },
+        {
+          "format": "jpg",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-local-processing-flow-en-1200w.jpg",
+          "bytes": 120114,
+          "purpose": "responsive-fallback"
+        }
+      ],
+      "assumptions": [
+        "Localized GitHub README conceptual illustration; not a product screenshot.",
+        "SEO mode assumes the image will be used on a website or web page."
+      ],
+      "warnings": [
+        "Description generation defaults to Japanese; translated labels do not change runtime behavior.",
+        "Verify legibility after resizing.",
+        "Check small responsive variants for text/readability before publishing."
+      ],
+      "decisions": [
+        "Generated responsive WebP variants plus fallback images.",
+        "Prepared HTML implementation guidance.",
+        "Non-hero SEO images can usually use lazy loading."
+      ],
+      "locale": "en",
+      "implementation_recommendations": {
+        "readme": "README.md",
+        "readme_path": "docs/assets/images/readimage-local-processing-flow-en-1200w.webp",
+        "display": "Markdown image with localized alt text",
+        "fallback": "JPEG included for reuse; README uses WebP"
+      }
+    },
+    {
+      "original_file": "en-hero.png",
+      "original_bytes": 1582378,
+      "mode": "seo",
+      "role": "hero",
+      "slug": "readimage-on-device-hero-en",
+      "alt": "ReadImage on Device — a Swift package that reads images locally and returns text and JSON",
+      "original_width": 1672,
+      "original_height": 941,
+      "has_alpha": false,
+      "variants": [
+        {
+          "format": "webp",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-on-device-hero-en-1200w.webp",
+          "bytes": 76566,
+          "purpose": "responsive"
+        },
+        {
+          "format": "jpg",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-on-device-hero-en-1200w.jpg",
+          "bytes": 125451,
+          "purpose": "responsive-fallback"
+        }
+      ],
+      "assumptions": [
+        "Localized GitHub README conceptual illustration; not a product screenshot.",
+        "SEO mode assumes the image will be used on a website or web page."
+      ],
+      "warnings": [
+        "Description generation defaults to Japanese; translated labels do not change runtime behavior.",
+        "Verify legibility after resizing."
+      ],
+      "decisions": [
+        "Generated responsive WebP variants plus fallback images.",
+        "Prepared HTML implementation guidance.",
+        "Treated as a likely first-view/LCP image; lazy loading is not recommended."
+      ],
+      "locale": "en",
+      "implementation_recommendations": {
+        "readme": "README.md",
+        "readme_path": "docs/assets/images/readimage-on-device-hero-en-1200w.webp",
+        "display": "Markdown image with localized alt text",
+        "fallback": "JPEG included for reuse; README uses WebP"
+      }
+    },
+    {
+      "original_file": "zh-flow.png",
+      "original_bytes": 1411432,
+      "mode": "seo",
+      "role": "diagram",
+      "slug": "readimage-local-processing-flow-zh-cn",
+      "alt": "ReadImage在设备上处理图像，输出提取文本、JSON，以及在支持环境中生成的日语说明",
+      "original_width": 1672,
+      "original_height": 941,
+      "has_alpha": false,
+      "variants": [
+        {
+          "format": "webp",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-local-processing-flow-zh-cn-1200w.webp",
+          "bytes": 64006,
+          "purpose": "responsive"
+        },
+        {
+          "format": "jpg",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-local-processing-flow-zh-cn-1200w.jpg",
+          "bytes": 113933,
+          "purpose": "responsive-fallback"
+        }
+      ],
+      "assumptions": [
+        "Localized GitHub README conceptual illustration; not a product screenshot.",
+        "SEO mode assumes the image will be used on a website or web page."
+      ],
+      "warnings": [
+        "Description generation defaults to Japanese; translated labels do not change runtime behavior.",
+        "Verify legibility after resizing.",
+        "Check small responsive variants for text/readability before publishing."
+      ],
+      "decisions": [
+        "Generated responsive WebP variants plus fallback images.",
+        "Prepared HTML implementation guidance.",
+        "Non-hero SEO images can usually use lazy loading."
+      ],
+      "locale": "zh-CN",
+      "implementation_recommendations": {
+        "readme": "README.zh-CN.md",
+        "readme_path": "docs/assets/images/readimage-local-processing-flow-zh-cn-1200w.webp",
+        "display": "Markdown image with localized alt text",
+        "fallback": "JPEG included for reuse; README uses WebP"
+      }
+    },
+    {
+      "original_file": "zh-hero.png",
+      "original_bytes": 1626635,
+      "mode": "seo",
+      "role": "hero",
+      "slug": "readimage-on-device-hero-zh-cn",
+      "alt": "ReadImage on Device：在设备上读取图像并输出文本与JSON的Swift软件包",
+      "original_width": 1672,
+      "original_height": 941,
+      "has_alpha": false,
+      "variants": [
+        {
+          "format": "webp",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-on-device-hero-zh-cn-1200w.webp",
+          "bytes": 79160,
+          "purpose": "responsive"
+        },
+        {
+          "format": "jpg",
+          "width": 1200,
+          "height": 675,
+          "file": "images/readimage-on-device-hero-zh-cn-1200w.jpg",
+          "bytes": 128985,
+          "purpose": "responsive-fallback"
+        }
+      ],
+      "assumptions": [
+        "Localized GitHub README conceptual illustration; not a product screenshot.",
+        "SEO mode assumes the image will be used on a website or web page."
+      ],
+      "warnings": [
+        "Description generation defaults to Japanese; translated labels do not change runtime behavior.",
+        "Verify legibility after resizing."
+      ],
+      "decisions": [
+        "Generated responsive WebP variants plus fallback images.",
+        "Prepared HTML implementation guidance.",
+        "Treated as a likely first-view/LCP image; lazy loading is not recommended."
+      ],
+      "locale": "zh-CN",
+      "implementation_recommendations": {
+        "readme": "README.zh-CN.md",
+        "readme_path": "docs/assets/images/readimage-on-device-hero-zh-cn-1200w.webp",
+        "display": "Markdown image with localized alt text",
+        "fallback": "JPEG included for reuse; README uses WebP"
       }
     }
   ],
@@ -102,5 +304,10 @@
     "tool": "built-in image_gen",
     "prompts": "generation-prompts.md",
     "originals": "Generated PNG originals are preserved separately; not included in this repository."
+  },
+  "summary": {
+    "original_total_bytes": 9348159,
+    "recommended_delivery_bytes": 432798,
+    "estimated_reduction_percent": 95.4
   }
 }
