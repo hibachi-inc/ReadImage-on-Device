@@ -1,302 +1,267 @@
 # ReadImage on Device
 
-## これはなに
+![ReadImage on Device — 画像を端末内で読み取り、テキストとJSONへ変換するSwiftパッケージ](docs/assets/images/readimage-on-device-hero-1200w.webp)
 
-**iPhone / iPad / Mac で動く、完全オンデバイスの画像認識 API です。**
+**画像を、端末の中で読む。**
 
-画像を渡すと「何が写っているか」を日本語の文章で返します。処理はすべて Apple のオンデバイスフレームワーク（Vision / Foundation Models）で行われるため、**画像がネットワークに送られることはありません**。API キーも不要で、サーバーもクラウドも使いません。
+写真・書類・スクリーンショットから、文字や画像の特徴を取り出すSwiftパッケージです。macOS用CLIの `readimage` も同梱しています。AppleのVisionとFoundation Modelsを使い、画像の解析は端末内で完結します。画像のアップロード、APIキー、外部サーバーは不要です。
 
-同じ API のまま、**動いている OS ごとに「その OS が出せる最高精度」**を自動で使います。新しい OS ほど賢くなり、古い OS でも動きます。
+- **文字と特徴を抽出** — OCR、画像分類、顔・人物・動物の検出、バーコードの読み取り。
+- **テキスト・JSONで出力** — ローカル保存、検索、スクリプト、AIエージェントの前処理に。
+- **対応環境では日本語の説明を生成** — Apple Intelligenceが利用できない場合も、Visionの抽出結果を返します。
 
-Swift パッケージ（ライブラリ）と、macOS 用のコマンドラインツール（`readimage`）が入っています。
+ライブラリの宣言上の対応範囲は **macOS 11+ / iOS 13+**。CLIはmacOS用です。実際の最低OSはビルドに使うツールチェーンにも依存します（[対応環境](#対応環境と処理の仕組み)）。
 
-## 特徴
+[まず試す](#まず試すmacos-cli) · [出力を選ぶ](#出力を選ぶ) · [Swiftに組み込む](#swiftアプリに組み込む) · [LLMと連携する](#画像を読めないllmエージェントと連携する)
 
-- **macOS 11 以降 / iOS 13 以降**で動作（ライブラリ）。CLI は macOS 用
-- **完全オフライン・オンデバイス**（通信なし・API キー不要）
-- **OS に応じて自動で最高精度を選択**（Vision の revision を自動で最新に）
-- **日本語の解説文を返す**（Apple Intelligence 対応 OS）。非対応 OS でも OCR などの生テキストを返す
-- **共通規格風のかんたん API**（stdin/stdout の JSON、Swift からも数行）
+## まず試す：macOS CLI
 
-```bash
-$ readimage photo.jpg
-
-この画像は、白い紙に印刷された日本語の請求書のスクリーンショットです。
-請求金額は128,000円、発行日は2026年10月1日と記載されています。
-```
-
-## ユースケース
-
-**画像を外に出せない場面で、そのまま使えます。** 処理が端末内で完結するので、機密書類や個人の写真でも、クラウドに預けずに文字起こしやタグ付けができます。
-
-- **テキスト専用の LLM に画像を理解させる** — vision 非対応の LLM でも、先にこのパッケージで画像を文章化してから渡せば、内容を踏まえた回答が得られます。画像は端末内で説明文・文字起こしに変換し、LLM にはテキストだけを流せます。
-- **レシート・請求書の読み取り** — OCR で金額・日付・番号を文字起こし。経理データを外部サービスに送らずに済む。
-- **写真ライブラリの整理・検索** — 分類ラベル（`document`, `screenshot` など）と OCR 結果で、写真にローカルでタグを付けて検索に使う。
-- **スクリーンショットの内容把握** — 画面を撮って「何が写っているか」を日本語の文章で得る。読み上げや内容の要約の下地に。
-- **オフライン・閉域環境の画像メモ** — ネットが無い現場でも、撮った写真の説明と読み取り文字をその場で得る。
-- **アプリのアクセシビリティ補助** — 画像の内容を文章化し、VoiceOver などの説明として使う。
-
-vision 非対応の LLM と組み合わせる場合は、画像を文章に変えてからテキストとして渡します。
+GitとSwift 6.0以降のツールチェーンが必要です。Appleの開発ツール（XcodeまたはCommand Line Tools）でビルドします。
 
 ```bash
-# 画像を説明文にしてから、テキスト専用の LLM に渡す
-readimage receipt.jpg | your-llm "この内容を勘定科目に仕訳して"
-
-# 文字起こしだけが欲しいとき（全 OS 対応）
-readimage --raw receipt.jpg | your-llm "この請求書の支払期日を教えて"
-```
-
-CLI なら、フォルダ内の画像をまとめて処理できます。
-
-```bash
-# ディレクトリ内の画像をまとめて解説文にする
-readimage ./scans/*.png
-
-# 文字起こしだけをまとめてファイルにする（全 OS 対応）
-readimage --raw ./scans/*.png > texts.txt
-
-# 加工しやすいように JSON で受け取る
-readimage --json form.png > facts.json
-```
-
-Swift アプリに組み込む場合も、渡すのは `CGImage` 1 枚だけです。
-
-```swift
-let result = try await ReadImage.read(cgImage: cgImage, path: "receipt.jpg")
-saveToLocalDatabase(result.text)   // 端末内で完結、外部送信なし
-```
-
-## vision 非対応のツールから使う
-
-**画像を理解できない LLM・チャットボット・エージェント・バッチ処理でも、このパッケージを前処理に挟めば画像の内容を扱えます。** 画像は端末内でテキストに変換し、ツール側にはテキストだけを渡します。vision 対応モデルに切り替える必要はありません。
-
-渡し方は 3 つ。用途に応じて選べます。
-
-| 渡し方 | 出力 | 使える環境 | 向いている用途 |
-| --- | --- | --- | --- |
-| `--raw` | Vision の抽出結果（OCR 文字・分類・色など）をプレーンテキストで | 全 OS（macOS 11+ / iOS 13+） | 事実だけ欲しい。文字起こし、検索インデックス作成 |
-| `--explain`（既定） | 日本語の解説文 | Apple Intelligence 対応 OS（それ以外は `--raw` に自動フォールバック） | 「何が写っているか」を自然な文章で欲しい |
-| `--json` | 客観情報を構造化 JSON で | 全 OS | 後段がパースして使う。フィールド単位で取り出したい |
-
-### テキスト専用 LLM に画像を理解させる
-
-vision 非対応の LLM には、画像ではなく `readimage` の出力テキストを渡します。
-
-```bash
-# 解説文にしてから LLM に渡す（LLM 側はテキストだけを扱う）
-readimage receipt.jpg | your-llm "この内容を勘定科目に仕訳して"
-
-# 事実だけ欲しいときは --raw。OCR 結果をそのままプロンプトに載せる（全 OS 対応）
-readimage --raw receipt.jpg | your-llm "この請求書の支払期日を教えて"
-
-# 構造化して渡したいときは --json をパースする
-readimage --json form.png | jq -r '.[0].facts.recognized_texts[]' | your-llm "項目を抽出して"
-```
-
-ポイントは、**画像そのものがモデルに渡らない**ことです。画像は端末内で説明文・文字起こしに変換され、外部に送るのはテキストだけになります。クラウドの vision モデルに画像を預けたくない場合にも有効です。
-
-### エージェントのツールとして組み込む
-
-Codex や Claude Code のようなエージェントに「画像を読む」ツールとして登録すれば、**エージェント自身が画像を直接読めない状況でも、画像の中身を踏まえた回答**ができます。エージェントは次の 1 コマンドを呼ぶだけで済みます。
-
-```bash
-readimage --raw /path/to/image.png   # 画像の中身をテキストで受け取る
-readimage --json /path/to/image.png  # 必要なフィールドだけ使う
-```
-
-### 失敗の検知
-
-`readimage` は 1 枚でも処理に失敗すると終了コード `1` を返すので、パイプやシェル連鎖の途中でも失敗を見逃しません。`--json` の場合は各画像の結果に `error` フィールドが入るため、失敗した画像だけを後段で扱えます。
-
-```bash
-set -o pipefail
-readimage --raw ./scans/*.png | your-llm "..." || echo "画像の読み取りに失敗しました" >&2
-```
-
-## 使い方
-
-### インストール
-
-Swift Package Manager で使えます。macOS アプリでも iOS アプリでも同じ API です。
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/hibachi-inc/ReadImage-on-Device", from: "0.1.0")
-]
-```
-
-iOS アプリで使う場合は、`UIImage` から `CGImage` を取り出して渡します。
-
-```swift
-import ReadImageOnDevice
-
-guard let cgImage = uiImage.cgImage else { return }
-let result = await ReadImage.read(cgImage: cgImage, mode: .explain, path: "photo.jpg")
-print(result.text)   // iPhone でも日本語の解説文が返る
-```
-
-CLI として使う場合:
-
-```bash
-git clone https://github.com/hibachi-inc/ReadImage-on-Device
+git clone https://github.com/hibachi-inc/ReadImage-on-Device.git
 cd ReadImage-on-Device
 swift build -c release
-.build/release/readimage photo.jpg
+
+# 画像パスを、自分の画像に置き換えて実行
+.build/release/readimage --raw /path/to/image.png
 ```
 
-### CLI
+`--raw` はApple Intelligenceを使わずに動くため、最初の動作確認に向いています。以降の例で `readimage` として呼ぶには、ビルド後にシェルで次のエイリアスを設定してください（現在のシェルだけに適用）。
 
 ```bash
-readimage <画像> [<画像> ...] [options]
-cat image.png | readimage -          # 標準入力からも読める
-
-readimage --raw photo.jpg            # AI を使わず、Vision の抽出結果だけを返す
-readimage --json photo.jpg           # 客観情報を JSON で返す
-readimage --languages ja-JP,en-US a.jpg b.png
+alias readimage="$PWD/.build/release/readimage"
 ```
 
-主なオプション:
+```bash
+readimage --raw receipt.jpg    # Visionの抽出結果
+readimage --raw --json receipt.jpg  # 同じ情報をJSONで取得
+readimage receipt.jpg          # 対応環境では日本語の説明を生成
+```
+
+<details>
+<summary>出力のイメージを見る</summary>
+
+次は書類画像を `--raw` で読んだ場合の説明用サンプルです。内容・分類・数値は画像と実行環境によって変わります。
+
+```text
+=== receipt.jpg  [route: vision-raw] ===
+- 画像サイズ: 1800x1040
+- 画像分類ラベル: document(20%), screenshot(20%)
+- 写っている文字(OCR): ヒバチ株式会社請求書 / 御請求金額：128,000円 / 発行日：2026-10-01
+- 平均色: #CBD5DD
+```
+
+Apple Intelligenceが使える環境では、既定の `--explain` で抽出情報を日本語の文章に整えます。説明の生成に失敗した場合は抽出結果に戻ります。
+
+</details>
+
+## 出力を選ぶ
+
+![画像をReadImageで端末内処理し、抽出テキスト・JSON・対応環境での日本語説明を出力する流れ](docs/assets/images/readimage-local-processing-flow-1200w.webp)
+
+| 欲しいもの | コマンド | 出力・条件 |
+| --- | --- | --- |
+| OCRと画像の特徴 | `readimage --raw image.png` | Visionの抽出結果。Apple Intelligence不要 |
+| 加工しやすいJSON | `readimage --raw --json image.png` | 画像ごとの結果を配列で返す。Apple Intelligence不要 |
+| 日本語の説明 | `readimage image.png` | 既定は `--explain`。対応環境では文章を生成し、使えなければ抽出結果を返す |
+
+**`--raw` はOCRの文字だけではありません。** サイズ、分類、平均色なども含み、表示用のOCRは先頭40件までです。文字だけをすべて取り出すには、JSONの `recognized_texts` を使います。
+
+```bash
+# jqを利用できる環境で、OCRの文字だけを取り出す
+readimage --raw --json receipt.jpg | jq -r '.[0].facts.recognized_texts[]'
+```
+
+`--json` は出力形式の指定です。単独で使うと既定の説明生成も実行するため、Visionの抽出情報だけが必要なら `--raw --json` を組み合わせます。JSON出力に生成された説明文は含まれません。
+
+## こんな用途に
+
+| 用途 | 使い方 |
+| --- | --- |
+| レシート・請求書・書類の読み取り | OCRで文字を抽出し、端末内で保存・確認する |
+| 写真・スクリーンショットの整理 | 分類ラベルや読み取り文字を検索・タグ付けに使う |
+| 画像を読めないLLMやエージェントの補助 | 画像をテキストに変換してから後段へ渡す |
+| アプリ内の画像説明 | 日本語の説明を表示・読み上げの下地に使う |
+
+読み取り結果や生成文には誤りが含まれることがあります。金額・日付などの重要な情報は元画像と照合してください。
+
+## CLIの使い方
+
+```bash
+# 複数の画像をまとめて処理
+readimage --raw ./scans/*.png > texts.txt
+readimage --raw --json ./scans/*.png > facts.json
+
+# 標準入力から画像を読む
+cat image.png | readimage --raw -
+
+# OCR言語や説明の依頼文を指定
+readimage --raw --languages ja-JP,en-US image.png
+readimage --explain --prompt "読み取れた内容を短く説明してください" image.png
+```
 
 | オプション | 説明 |
 | --- | --- |
-| `--raw` | AI を使わず、Vision の生の抽出結果（AI 整形前テキスト）だけを返す。全 OS 対応 |
-| `--explain` | その OS で使える最善の方法で解説文を生成する（既定） |
-| `-p, --prompt <text>` | 解説の依頼文を差し替える |
-| `-i, --instructions <text>` | 生成時の system 指示を差し替える |
-| `--languages <a,b>` | OCR 言語（既定: `ja-JP,en-US`） |
-| `--json` | Vision の客観情報を JSON で出力する |
-| `--no-animals` | 動物検出を行わない |
-| `--no-barcodes` | バーコード / QR 検出を行わない |
+| `--raw` | AIによる文章生成をせず、Visionの抽出結果を返す |
+| `--explain` | 利用可能な経路で説明を生成する（既定） |
+| `--json` | 抽出情報と処理経路をJSONで出力する |
+| `-p, --prompt <text>` | 説明生成の依頼文を指定する |
+| `-i, --instructions <text>` | 説明生成のシステム指示を指定する |
+| `--languages <a,b>` | OCR言語をカンマ区切りで指定する（既定：`ja-JP,en-US`） |
+| `--no-animals` | 動物検出を省略する |
+| `--no-barcodes` | バーコード・QRコードの検出を省略する |
+| `-h, --help` / `--version` | ヘルプ / バージョンを表示する |
 
-終了コード:
+### JSONの形式と失敗の検知
 
-| コード | 意味 |
-| --- | --- |
-| `0` | すべての画像を処理できた |
-| `1` | 1 枚以上の画像で失敗した（存在しないパス、未対応形式など）。パイプやシェル連鎖で失敗を検知できる |
-| `2` | 引数エラー（画像パス未指定、未知のオプション、空の標準入力など） |
-
-複数の画像を渡した場合、1 枚でも失敗すると `1` で終了します。`--json` では成否にかかわらず各画像の結果が配列で出るので、失敗は `error` フィールドで判別できます。
-
-### Swift から
-
-```swift
-import ReadImageOnDevice
-
-// 解説文を生成（その OS で最高の経路を自動選択）
-let result = try await ReadImage.read(path: "photo.jpg")
-print(result.route)   // 例: "vision+fm(macOS26)"
-print(result.text)    // 日本語の解説文
-
-// AI 整形前の生テキストだけが欲しいとき
-let raw = try ReadImage.rawText(at: "photo.jpg")
-print(raw)
-
-// 同期版（macOS 11〜25 でも Swift 並行ランタイム無しで動く）
-let sync = try ReadImage.readSync(path: "photo.jpg", mode: .raw)
-```
-
-## どの OS でどう動くか
-
-同じ `ReadImage.read(...)` が、実行中の OS に応じて経路を選びます（macOS と iOS で同じ表）。
-
-| 実行環境 | 採用する経路 | 返すもの |
-| --- | --- | --- |
-| **macOS 27 / iOS 27 以降** + Apple Intelligence | `native-multimodal(macOS27)` | 画像を Foundation Models に直接渡して解説文を生成 |
-| **macOS 26 / iOS 26** + Apple Intelligence | `vision+fm(macOS26)` | Vision で客観情報を抽出 → Foundation Models で日本語化 |
-| **macOS 11〜25 / iOS 13〜25**（Apple Intelligence 無効を含む） | `vision-raw` | Vision の生の抽出結果（AI 整形前テキスト） |
-
-どの経路でも、Vision による客観情報（`ImageFacts`）は常に取得できるので、生テキストは macOS 11 / iOS 13 から使えます。
-
-> **iOS で Apple Intelligence を使うには**: 言語モデル（Foundation Models）は Apple Intelligence 対応端末（A17 Pro / M シリーズ以降）でのみ利用できます。非対応端末では自動的に `vision-raw` 経路になります。
-
-### 各 OS の「最高精度」の選び方
-
-Vision の各リクエストは OS ごとに複数の revision を持ちます。本パッケージは `supportedRevisions.last` を実行時に選ぶので、**新しい OS では自動的に高精度なモデル**が使われます。revision は macOS / iOS で共通です。
-
-| リクエスト | 最新 revision が使える OS |
-| --- | --- |
-| 画像分類 `VNClassifyImageRequest` | macOS 14+ / iOS 17+ (rev2) |
-| 文字認識 `VNRecognizeTextRequest` | macOS 13+ / iOS 16+ (rev3) |
-| 顔検出 `VNDetectFaceRectanglesRequest` | macOS 12+ / iOS 15+ (rev3) |
-| 人物検出 `VNDetectHumanRectanglesRequest` | macOS 12+ / iOS 15+ (rev2) |
-| 動物検出 `VNRecognizeAnimalsRequest` | macOS 12+ / iOS 15+ (rev2) |
-| バーコード `VNDetectBarcodesRequest` | macOS 14+ / iOS 17+ (rev4) |
-
-## 抽出できる客観情報
-
-`--json` で次の情報が得られます。
-
-- `pixel_width` / `pixel_height` — 画像サイズ
-- `classifications` — 画像分類ラベルと信頼度（`document`, `screenshot` など）
-- `recognized_texts` — OCR で読み取った文字
-- `face_count` / `human_count` — 検出した顔・人物の数
-- `animals` — 検出した動物と信頼度
-- `barcodes` — バーコード / QR の種別と内容
-- `average_color` — 平均色（`#RRGGBB`）
-- `revisions` — 実際に使った Vision の revision
+1枚でも結果は配列です。成功時には `facts`、画像の読み込み失敗時には `error` が含まれます。次は形式を示す抜粋です。
 
 ```json
 [
   {
-    "path": "photo.jpg",
+    "path": "receipt.jpg",
     "route": "vision-raw",
     "mode": "raw",
     "facts": {
       "pixel_width": 1800,
       "pixel_height": 1040,
-      "classifications": [
-        { "identifier": "document", "confidence": 0.204 },
-        { "identifier": "screenshot", "confidence": 0.202 }
-      ],
-      "recognized_texts": [
-        "ヒバチ株式会社請求書",
-        "御請求金額：128,000円",
-        "発行日：2026-10-01",
-        "Invoice No. HB-2026-1001"
-      ],
+      "recognized_texts": ["御請求金額：128,000円"],
       "face_count": 0,
       "human_count": 0,
-      "animals": [],
-      "barcodes": [],
-      "average_color": "#CBD5DD",
-      "revisions": {
-        "classifyImage": 2,
-        "recognizeText": 3,
-        "detectFaceRectangles": 3,
-        "detectHumanRectangles": 2,
-        "recognizeAnimals": 2,
-        "detectBarcodes": 4
-      }
+      "average_color": "#CBD5DD"
     }
+  },
+  {
+    "path": "missing.png",
+    "route": "none",
+    "mode": "raw",
+    "error": "画像が見つかりません: missing.png"
   }
 ]
 ```
 
-## デプロイ先について（macOS 11 / iOS 13 を下限にする場合）
+このほか `classifications`（分類と信頼度）、`animals`、`barcodes`、`revisions`（使用したVisionのrevision）を取得できます。フィールドの詳細は [ImageFacts.swift](Sources/ReadImageOnDevice/ImageFacts.swift) と [CLIの出力定義](Sources/readimage/main.swift) を参照してください。
 
-`Package.swift` は `platforms: [.macOS(.v11), .iOS(.v13)]` を宣言しています。ソースコード自体は macOS 11 / iOS 13 の API だけで型チェックが通ります。
+| 終了コード | 意味 |
+| --- | --- |
+| `0` | すべての画像を処理できた |
+| `1` | 1枚以上の画像処理に失敗した |
+| `2` | 入力がない、未知のオプション、空の標準入力など |
 
-ただし直近の Xcode ツールチェーン（Xcode 27）は、サポートする下限を**macOS 12.0 / iOS 15.0** に引き上げています。そのため Xcode 27 でビルドすると、宣言した下限は自動的に切り上げられます（macOS 11 を明示した `swift build` は 12.0、iOS 13 は 15.0 になります）。
+説明生成が使えず `vision-raw` に戻ることは、画像処理の失敗には含まれません。複数画像で一部が失敗しても、JSONにはすべての結果が出ます。パイプで終了コードを検知するには `set -o pipefail` を使ってください。
 
-そのため、**真に macOS 11 をサポートするバイナリ**が必要な場合は、Command Line Tools（SDK 26）でビルドします。
+## Swiftアプリに組み込む
+
+Swift Package Managerで追加できます。現在はバージョンタグが未公開のため、`main` ブランチを指定します。固定したい場合はコミットの `revision` を指定してください。
+
+```swift
+// Package.swift の dependencies に追加
+.package(
+    url: "https://github.com/hibachi-inc/ReadImage-on-Device.git",
+    branch: "main"
+)
+```
+
+```swift
+// 利用するターゲットの dependencies に追加
+.product(name: "ReadImageOnDevice", package: "ReadImage-on-Device")
+```
+
+Xcodeでは「Add Package Dependencies」から同じURLを追加し、依存条件に `main` ブランチを選べます。
+
+### Mac：画像ファイルから
+
+```swift
+import ReadImageOnDevice
+
+let result = try await ReadImage.read(path: "photo.jpg")
+print(result.text)   // 日本語の説明、またはVisionの抽出結果
+print(result.route)  // 実際に使った処理経路
+
+// AIによる文章生成をしない
+let raw = try ReadImage.rawText(at: "photo.jpg")
+print(raw)
+
+// 同期APIも利用可能
+let sync = try ReadImage.readSync(path: "photo.jpg", mode: .raw)
+```
+
+### iPhone / iPad：UIImageから
+
+```swift
+import UIKit
+import ReadImageOnDevice
+
+// UIImageを受け取る非同期関数の例
+func describe(_ image: UIImage) async -> String? {
+    guard let cgImage = image.cgImage else { return nil }
+    let result = await ReadImage.read(cgImage: cgImage, path: "photo.jpg")
+    return result.text
+}
+```
+
+`CGImage` を渡すAPIは `await` のみで呼べます。画像ファイルのパスを渡すAPIは読み込みエラーがあるため `try await` が必要です。どちらも `result.facts` でVisionの抽出情報を取得できます。
+
+## 画像を読めないLLM・エージェントと連携する
+
+画像を受け取れないモデルでも、`readimage` の出力テキストを入力として扱えます。CodexやClaude CodeなどからCLIを呼び出す前処理としても利用できます。
+
+```bash
+# まず端末内でテキスト化し、後段のツールに渡す
+readimage --raw receipt.jpg > receipt-facts.txt
+
+# JSONから文字だけを取り出す（jqが必要）
+readimage --raw --json receipt.jpg | jq -r '.[0].facts.recognized_texts[]' > receipt-text.txt
+```
+
+**ReadImage自体は画像も結果も外部へ送信しません。** 出力をクラウドLLMなどに渡す場合、そのテキストは外部送信の対象になります。端末内で完結させたい場合は、保存先や後段の処理もローカルにしてください。
+
+## 対応環境と処理の仕組み
+
+Visionで画像の特徴を抽出し、`--explain` では環境に応じて説明の生成を試みます。
+
+| 実行環境・条件 | 処理経路 | 説明生成の方法 |
+| --- | --- | --- |
+| macOS 27 / iOS 27以降 + 対応SDK・モデル | `native-multimodal(macOS27)` | 画像をFoundation Modelsへ直接入力 |
+| macOS 26 / iOS 26以降 + Foundation Modelsが利用可能 | `vision+fm(macOS26)` | Visionの抽出情報をもとに文章を生成 |
+| 古いOS、モデルが使えない環境、または `--raw` 指定 | `vision-raw` | Visionの抽出結果をそのまま返す |
+
+`route` の文字列はiOSでも同じです。画像直接入力の経路はSwift 6.4以降かつ対応SDKでコンパイルされ、利用できなければVision + Foundation Models、次にVision単独へ切り替わります。Visionの各リクエストには、実行OSで利用できる最新のrevisionを選びます。精度は画像の内容や環境で変わります。
+
+日本語の説明生成には、Apple Intelligence対応端末と利用可能なオンデバイスモデルが必要です。OSのバージョンだけでは決まりません。設定・モデルの準備状態も確認してください。
+
+- モデルの利用可否：`ReadImage.supportsLanguageModel`
+- SDKでのFoundation Modelsの取り込み：`ReadImage.hasFoundationModelsFramework`
+- Appleの仕様：[Foundation Models](https://developer.apple.com/documentation/foundationmodels)
+
+<details>
+<summary>古いOS向けのビルドについて</summary>
+
+`Package.swift` の宣言は `macOS 11 / iOS 13` ですが、ツールチェーンが対応する最低OSにも制約されます。Xcode 27でのビルドでは、最低OSがmacOS 12 / iOS 15へ引き上げられます。
+
+macOS 11を下限とするCLIをビルドする場合は、対応するCommand Line Tools（SDK 26）を使用し、生成バイナリの `minos` を確認してください。
 
 ```bash
 DEVELOPER_DIR=/Library/Developer/CommandLineTools \
   /Library/Developer/CommandLineTools/usr/bin/swift build -c release
-otool -l .build/release/readimage | grep -A3 LC_BUILD_VERSION   # minos 11.0
+
+otool -l .build/release/readimage | grep -A3 LC_BUILD_VERSION
 ```
 
-Xcode ツールチェーンでビルドした場合は `minos 12.0` になりますが、いずれの場合も Foundation Models は弱リンクされるため、対応していない古い OS では自動的に Vision の経路へフォールバックします。
+iOS 13〜14を対象にする場合も、それらのデプロイ先に対応するツールチェーンが必要です。宣言値だけで実際のバイナリの下限を判断しないでください。
 
-iOS 13〜14 を真に下限にするには、当時の iOS SDK を含む Xcode 26 以前のツールチェーンでビルドしてください。Xcode 27 では iOS 15 以上が下限になります。
+</details>
 
-## テスト
+## 開発・テスト
 
 ```bash
+swift build -c release
 swift test
 ```
 
 ## ライセンス
 
-MIT License — Copyright (c) 2026 Hibachi Inc.
+[MIT License](LICENSE) — ヒバチ株式会社 / HIBACHI inc.
+
+READMEのビジュアルはAI生成の概念図です。実際のアプリ画面ではありません。

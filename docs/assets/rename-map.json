@@ -1,0 +1,18 @@
+{
+  "generated-hero.png": {
+    "mode": "seo",
+    "role": "hero",
+    "slug": "readimage-on-device-hero",
+    "alt": "ReadImage on Device — 画像を端末内で読み取り、テキストとJSONへ変換するSwiftパッケージ",
+    "assumptions": ["GitHub READMEの冒頭画像。サムネイルにも再利用できる概念図。", "1200px幅の単一配信画像を選択。GitHub専用の寸法要件としては扱わない。"],
+    "warnings": ["生成された画面とJSONカードは概念図で、実際の出力画面ではない。", "文字の可読性は縮小後も目視確認する。"]
+  },
+  "generated-flow.png": {
+    "mode": "seo",
+    "role": "diagram",
+    "slug": "readimage-local-processing-flow",
+    "alt": "画像をReadImageで端末内処理し、抽出テキスト・JSON・対応環境での日本語説明を出力する流れ",
+    "assumptions": ["GitHub READMEの説明図。説明文の生成は対応環境に限られる。"],
+    "warnings": ["画像は端末内処理までを示す。出力を外部LLMへ渡す場合はテキストが外部送信される。"]
+  }
+}
